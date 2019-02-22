@@ -1,0 +1,5 @@
+civicrm_event_sync.settings:
+  title: 'civicrm_event_sync settings'
+  route_name: civicrm_event_sync.settings_form
+  description: 'Configure how civicrm_event_sync will sync.'
+  parent: system.admin_config_system

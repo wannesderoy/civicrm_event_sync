@@ -1,0 +1,15 @@
+{
+  "name": "wannesderoy/civicrm_event_sync",
+  "description": "Enables a full sync between the CivCRM Event entity and a Drupal node type event.",
+  "type": "drupal-module",
+  "license": "AGPL-3.0",
+  "keywords": [
+    "Drupal 8",
+    "CiviCRM"
+  ],
+  "authors": [
+    {
+      "name": "Wannes De Roy",
+      "role": "Full-stack developer"
+    },
+}

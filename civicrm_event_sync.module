@@ -1,0 +1,177 @@
+<?php
+
+/**
+ * @file
+ * Module civicrm_event_sync.
+ *
+ * Enables a full sync between the CivCRM Event
+ * entity and a Drupal node type event.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+
+/**
+ * Sync method names follow the following logic.
+ *
+ * "eventSync<Origin><Operation><Destination>".
+ *
+ * Depending on the provided destination the method is located in the class
+ * EventSyncCivicrm (destination: CiviCRM) or
+ * EventSyncDrupal (destination: Drupal).
+ *
+ * Examples:
+ * event_sync_civicrm_create_drupal is called when an event in civicrm is
+ * created and must be synced to drupal and is located in class EventSyncDrupal.
+ *
+ * event_sync_drupal_delete_civicrm is called when an even in drupal is deleted
+ * and must be synced to civicrm and is located in class EventSyncCivicrm.
+ */
+
+/**
+ * CiviCRM hooks.
+ */
+
+/**
+ * Main hook_civicrm_post implementation.
+ *
+ * @param string $op
+ *   The operation being performed.
+ * @param string $objectName
+ *   The name of the entity in CiviCRM.
+ * @param string $objectId
+ *   The id of the current entity.
+ * @param object $objectRef
+ *   An array containing the entity data.
+ */
+function civicrm_event_sync_civicrm_post(string $op, string $objectName, string $objectId, object &$objectRef) {
+  // Only allow for events from civicrm.
+  if ($objectName === "Event") {
+    if (function_exists("civicrm_event_sync_civicrm_post_${op}")) {
+      call_user_func("civicrm_event_sync_civicrm_post_${op}", $objectId, $objectRef);
+    }
+  }
+}
+
+/**
+ * Implements hook_civicrm_post() for create operation.
+ *
+ * @param $objectId
+ * @param $objectRef
+ *
+ * @see civicrm_event_sync_civicrm_post().
+ */
+function civicrm_event_sync_civicrm_post_create($objectId, $objectRef) {
+  drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_create_shutdown', $objectId, $objectRef);
+}
+
+/**
+ * CiviCRM event create shutdown function.
+ *
+ * @param $objectId
+ * @param $objectRef
+ */
+function civicrm_event_sync_civicrm_post_create_shutdown($objectId, $objectRef) {
+  \Drupal::service('civicrm_event_sync.drupal')->eventSyncCivicrmCreateDrupal($objectId, $objectRef);
+}
+
+/**
+ * Implements hook_civicrm_post() for edit operation.
+ *
+ * @param $objectId
+ * @param $objectRef
+ *
+ * @see civicrm_event_sync_civicrm_post().
+ */
+function civicrm_event_sync_civicrm_post_edit($objectId, $objectRef) {
+  drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_edit_shutdown', $objectId, $objectRef);
+}
+
+/**
+ * CiviCRM event update shutdown function.
+ *
+ * @param $objectId
+ * @param $objectRef
+ */
+function civicrm_event_sync_civicrm_post_edit_shutdown($objectId, $objectRef) {
+  \Drupal::service('civicrm_event_sync.drupal')->eventSyncCivicrmUpdateDrupal($objectId, $objectRef);
+}
+
+/**
+ * Implements hook_civicrm_post() for delete operation.
+ *
+ * @param $objectId
+ * @param $objectRef
+ *
+ * @see civicrm_event_sync_civicrm_post().
+ */
+function civicrm_event_sync_civicrm_post_delete($objectId, $objectRef) {
+  drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_delete_shutdown', $objectId, $objectRef);
+}
+
+/**
+ * CiviCRM event delete shutdown function.
+ *
+ * @param $objectId
+ * @param $objectRef
+ */
+function civicrm_event_sync_civicrm_post_delete_shutdown($objectId, $objectRef) {
+  \Drupal::service('civicrm_event_sync.drupal')->eventSyncCivicrmDeleteDrupal($objectId, $objectRef);
+}
+
+/**
+ * Drupal hooks.
+ */
+
+/**
+ * Implements hook_ENTITY_TYPE_insert().
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function civicrm_event_sync_node_insert(EntityInterface $entity) {
+  drupal_register_shutdown_function('civicrm_event_sync_node_insert_shutdown', $entity);
+}
+
+/**
+ * Drupal event create shutdown function.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function civicrm_event_sync_node_insert_shutdown(EntityInterface $entity) {
+  \Drupal::service('civicrm_event_sync.civicrm')->eventSyncDrupalCreateCivicrm($entity);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_update().
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function civicrm_event_sync_node_update(EntityInterface $entity) {
+  drupal_register_shutdown_function('civicrm_event_sync_node_update_shutdown', $entity);
+}
+
+/**
+ * Drupal event udpate shutdown function.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function civicrm_event_sync_node_update_shutdown(EntityInterface $entity) {
+  \Drupal::service('civicrm_event_sync.civicrm')->eventSyncDrupalUpdateCivicrm($entity);
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_delete().
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function civicrm_event_sync_node_delete(EntityInterface $entity) {
+  drupal_register_shutdown_function('civicrm_event_sync_node_delete_shutdown', $entity);
+}
+
+/**
+ * Drupal event delete shutdown function.
+ *
+ * @param \Drupal\Core\Entity\EntityInterface $entity
+ */
+function civicrm_event_sync_node_delete_shutdown(EntityInterface $entity) {
+  \Drupal::service('civicrm_event_sync.civicrm')->eventSyncDrupalDeleteCivicrm($entity);
+}

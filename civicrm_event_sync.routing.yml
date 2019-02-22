@@ -1,0 +1,7 @@
+civicrm_event_sync.settings_form:
+  path: '/admin/config/system/civicrm_event_sync'
+  defaults:
+    _form: '\Drupal\civicrm_event_sync\Form\SettingsForm'
+    _title: CiviCRM Event Sync
+  requirements:
+    _permission: 'administer site configuration'
