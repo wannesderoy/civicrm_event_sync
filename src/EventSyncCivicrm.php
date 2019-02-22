@@ -69,8 +69,8 @@ class EventSyncCivicrm extends EventSyncBase {
       $this->apiService->api('Event', 'create', [
         'id' => $event,
         'title' => $entity->getTitle(),
-        'start_date' => $entity->get('field_start_date')->getString(),
-        'end_date' => $entity->get('field_end_date')->getString(),
+//        'start_date' => $entity->get('field_start_date')->getString(),
+//        'end_date' => $entity->get('field_end_date')->getString(),
         'event_type_id' => "Conference",
       ]);
 

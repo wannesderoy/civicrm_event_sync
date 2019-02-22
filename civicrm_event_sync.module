@@ -9,6 +9,7 @@
  */
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Render\Markup;
 
 /**
  * Sync method names follow the following logic.
@@ -71,7 +72,8 @@ function civicrm_event_sync_civicrm_post_create($objectId, $objectRef) {
  * @param $objectRef
  */
 function civicrm_event_sync_civicrm_post_create_shutdown($objectId, $objectRef) {
-  \Drupal::service('civicrm_event_sync.drupal')->eventSyncCivicrmCreateDrupal($objectId, $objectRef);
+  \Drupal::service('civicrm_event_sync.drupal')
+    ->eventSyncCivicrmCreateDrupal($objectId, $objectRef);
 }
 
 /**
@@ -93,7 +95,8 @@ function civicrm_event_sync_civicrm_post_edit($objectId, $objectRef) {
  * @param $objectRef
  */
 function civicrm_event_sync_civicrm_post_edit_shutdown($objectId, $objectRef) {
-  \Drupal::service('civicrm_event_sync.drupal')->eventSyncCivicrmUpdateDrupal($objectId, $objectRef);
+  \Drupal::service('civicrm_event_sync.drupal')
+    ->eventSyncCivicrmUpdateDrupal($objectId, $objectRef);
 }
 
 /**
@@ -115,7 +118,8 @@ function civicrm_event_sync_civicrm_post_delete($objectId, $objectRef) {
  * @param $objectRef
  */
 function civicrm_event_sync_civicrm_post_delete_shutdown($objectId, $objectRef) {
-  \Drupal::service('civicrm_event_sync.drupal')->eventSyncCivicrmDeleteDrupal($objectId, $objectRef);
+  \Drupal::service('civicrm_event_sync.drupal')
+    ->eventSyncCivicrmDeleteDrupal($objectId, $objectRef);
 }
 
 /**
@@ -128,7 +132,7 @@ function civicrm_event_sync_civicrm_post_delete_shutdown($objectId, $objectRef) 
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function civicrm_event_sync_node_insert(EntityInterface $entity) {
-  drupal_register_shutdown_function('civicrm_event_sync_node_insert_shutdown', $entity);
+  //  drupal_register_shutdown_function('civicrm_event_sync_node_insert_shutdown', $entity);
 }
 
 /**
@@ -137,7 +141,8 @@ function civicrm_event_sync_node_insert(EntityInterface $entity) {
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function civicrm_event_sync_node_insert_shutdown(EntityInterface $entity) {
-  \Drupal::service('civicrm_event_sync.civicrm')->eventSyncDrupalCreateCivicrm($entity);
+  \Drupal::service('civicrm_event_sync.civicrm')
+    ->eventSyncDrupalCreateCivicrm($entity);
 }
 
 /**
@@ -155,7 +160,8 @@ function civicrm_event_sync_node_update(EntityInterface $entity) {
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function civicrm_event_sync_node_update_shutdown(EntityInterface $entity) {
-  \Drupal::service('civicrm_event_sync.civicrm')->eventSyncDrupalUpdateCivicrm($entity);
+  \Drupal::service('civicrm_event_sync.civicrm')
+    ->eventSyncDrupalUpdateCivicrm($entity);
 }
 
 /**
@@ -173,5 +179,69 @@ function civicrm_event_sync_node_delete(EntityInterface $entity) {
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function civicrm_event_sync_node_delete_shutdown(EntityInterface $entity) {
-  \Drupal::service('civicrm_event_sync.civicrm')->eventSyncDrupalDeleteCivicrm($entity);
+  \Drupal::service('civicrm_event_sync.civicrm')
+    ->eventSyncDrupalDeleteCivicrm($entity);
+}
+
+/**
+ * Implements hook_civicrm_pageRun().
+ *
+ * @param $page
+ */
+function civicrm_event_sync_civicrm_pageRun(&$page) {
+  if ($page->getVar('_name') == 'CRM_Event_Page_EventInfo') {
+
+    // Get all the messages (status & errors) and pass them to Drupal.
+    $statuses = CRM_Core_Session::singleton()->get('status');
+    if (!empty($statuses)) {
+      foreach ($statuses as $status) {
+        $message = Markup::create($status['text']);
+        \Drupal::messenger()
+          ->addMessage($message, (_message_types()[$status['type']] ?? 'status'));
+      }
+    }
+    $id = $page->get('id');
+
+    // Get the drupal node for this event and redirect to that node.
+    $ids = _getNodesFromCivicrmEventId($id);
+
+    if ($ids) {
+      // Always get the first destination id.
+      $destid = reset($ids);
+      if (!empty($destid)) {
+        $url = CRM_Utils_System::url('/node/' . $destid);
+        CRM_Utils_System::redirect($url);
+      }
+    }
+    else {
+      // Redirect to the civicrm backend page if no node exists yet.
+      CRM_Core_Session::setStatus('No Drupal node exists yet, so sending back to the edit form.');
+      CRM_Utils_System::redirect("/civicrm/event/manage/location?action=update&reset=1&id={$id}");
+    }
+
+  }
+}
+
+/**
+ * Helper function to map the civicrm status types to Drupal message types.
+ * Keys are the CiviCRM types & values are the Drupal types.
+ *
+ * @return array
+ */
+function _message_types(): array {
+  return [
+    'info' => 'status',
+    'success' => 'status',
+    'alert' => 'warning',
+    'error' => 'error',
+  ];
+}
+
+function _getNodesFromCivicrmEventId(int $id): array {
+  $query = \Drupal::service('entity.query')->get('node');
+  $result = $query->condition('type', 'event')
+    ->condition(\Drupal::config('civicrm_event_sync.settings')->get('field') . ".event_id", $id)
+    ->execute();
+
+  return $result;
 }
