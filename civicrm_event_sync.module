@@ -9,6 +9,7 @@
  */
 
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 
 /**
@@ -184,6 +185,26 @@ function civicrm_event_sync_node_delete_shutdown(EntityInterface $entity) {
 }
 
 /**
+ * @param $form
+ * @param \Drupal\Core\Form\FormStateInterface $form_state
+ * @param $form_id
+ */
+function civicrm_event_sync_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id === "node_event_edit_form") {
+    $node = $form_state->getFormObject()->getEntity();
+
+    $civicrm_event_id = $node->get(\Drupal::config('civicrm_event_sync.settings')
+      ->get('field'))->getString();
+
+    if (\Drupal::currentUser()->hasPermission('edit all events')) {
+      \Drupal::messenger()
+        ->addMessage(t('This Event is linked with civicrm, edit the event <a href="/civicrm/event/manage/settings?reset=1&action=update&id=@id">here</a>.', ['@id' => $civicrm_event_id]));
+    }
+
+  }
+}
+
+/**
  * Implements hook_civicrm_pageRun().
  *
  * @param $page
@@ -240,7 +261,8 @@ function _message_types(): array {
 function _getNodesFromCivicrmEventId(int $id): array {
   $query = \Drupal::service('entity.query')->get('node');
   $result = $query->condition('type', 'event')
-    ->condition(\Drupal::config('civicrm_event_sync.settings')->get('field') . ".event_id", $id)
+    ->condition(\Drupal::config('civicrm_event_sync.settings')
+        ->get('field') . ".event_id", $id)
     ->execute();
 
   return $result;
