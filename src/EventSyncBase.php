@@ -48,11 +48,18 @@ class EventSyncBase {
   protected $apiService;
 
   /**
-   * Contains the name of the configured sync field.
+   * Contains the name of the configured CiviCRM sync field in Drupal.
    *
    * @var string
    */
   var $civicrmRefField;
+
+  /**
+   * Contains the name of the configured Drupal sync field CiviCRM.
+   *
+   * @var string
+   */
+  var $drupalRefField;
 
   /**
    * @var
@@ -81,6 +88,7 @@ class EventSyncBase {
     $this->apiService = $apiService;
 
     $this->civicrmRefField = $this->getCivicrmRefField();
+    $this->drupalRefField = $this->getDrupalRefField();
     $this->update = 0;
   }
 
@@ -92,7 +100,19 @@ class EventSyncBase {
    */
   public function getCivicrmRefField(): string {
     $field_name = $this->configFactory->get('civicrm_event_sync.settings')
-      ->get('field');
+      ->get('drupal_field');
+    return $field_name;
+  }
+
+  /**
+   * Get the configured field name for the sync.
+   *
+   * @return string
+   *   The field configured in the backend to use as sync base.
+   */
+  public function getDrupalRefField(): string {
+    $field_name = $this->configFactory->get('civicrm_event_sync.settings')
+      ->get('custom_field');
     return $field_name;
   }
 
@@ -182,14 +202,31 @@ class EventSyncBase {
    * @return int
    * @throws \Exception
    */
-  public function getCivicrmEventDrupalId(int $event_id) {
+  public function getCivicrmEventDrupalId(int $event_id): int {
     $result = $this->apiService->api('Event', 'getSingle', [
       'id' => $event_id,
       'return' => ["custom_10"],
     ]);
 
     return $result['custom_10'];
-    //
+  }
+
+  /**
+   * Helper function that checks if an event is a templates. We need to check
+   * this because we don't allow a templates override.
+   *
+   * @param int $event_id
+   *
+   * @return bool
+   * @throws \Exception
+   */
+  public function isEventTemplate(int $event_id): bool {
+    $result = $this->apiService->api('Event', 'getSingle', [
+      'id' => $event_id,
+      'return' => ["is_template"],
+    ]);
+
+    return (bool) $result['is_template'];
   }
 
   /**

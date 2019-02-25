@@ -34,10 +34,7 @@ class EventSyncCivicrm extends EventSyncBase {
       // First: create the event in civicrm as wel.
       $result = $this->apiService->api('Event', 'create', [
         'title' => $entity->getTitle(),
-        'start_date' => $entity->get('field_start_date')->getString(),
-        'end_date' => $entity->get('field_end_date')->getString(),
-        'event_type_id' => "Conference",
-        'custom_10' => $entity->id(),
+        $this->drupalRefField => $entity->id(),
       ]);
 
       // Second: update the current node to include the civicrm event id.
@@ -69,9 +66,6 @@ class EventSyncCivicrm extends EventSyncBase {
       $this->apiService->api('Event', 'create', [
         'id' => $event,
         'title' => $entity->getTitle(),
-//        'start_date' => $entity->get('field_start_date')->getString(),
-//        'end_date' => $entity->get('field_end_date')->getString(),
-        'event_type_id' => "Conference",
       ]);
 
       $this->update++;

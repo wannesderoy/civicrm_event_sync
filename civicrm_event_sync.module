@@ -63,7 +63,9 @@ function civicrm_event_sync_civicrm_post(string $op, string $objectName, string 
  * @see civicrm_event_sync_civicrm_post().
  */
 function civicrm_event_sync_civicrm_post_create($objectId, $objectRef) {
-  drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_create_shutdown', $objectId, $objectRef);
+  if (_runOperationForType('create', 'drupal')) {
+    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_create_shutdown', $objectId, $objectRef);
+  }
 }
 
 /**
@@ -86,7 +88,9 @@ function civicrm_event_sync_civicrm_post_create_shutdown($objectId, $objectRef) 
  * @see civicrm_event_sync_civicrm_post().
  */
 function civicrm_event_sync_civicrm_post_edit($objectId, $objectRef) {
-  drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_edit_shutdown', $objectId, $objectRef);
+  if (_runOperationForType('update', 'drupal')) {
+    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_edit_shutdown', $objectId, $objectRef);
+  }
 }
 
 /**
@@ -109,7 +113,9 @@ function civicrm_event_sync_civicrm_post_edit_shutdown($objectId, $objectRef) {
  * @see civicrm_event_sync_civicrm_post().
  */
 function civicrm_event_sync_civicrm_post_delete($objectId, $objectRef) {
-  drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_delete_shutdown', $objectId, $objectRef);
+  if (_runOperationForType('delete', 'drupal')) {
+    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_delete_shutdown', $objectId, $objectRef);
+  }
 }
 
 /**
@@ -133,7 +139,9 @@ function civicrm_event_sync_civicrm_post_delete_shutdown($objectId, $objectRef) 
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function civicrm_event_sync_node_insert(EntityInterface $entity) {
-  //  drupal_register_shutdown_function('civicrm_event_sync_node_insert_shutdown', $entity);
+  if (_runOperationForType('create', 'civicrm')) {
+    drupal_register_shutdown_function('civicrm_event_sync_node_insert_shutdown', $entity);
+  }
 }
 
 /**
@@ -152,7 +160,9 @@ function civicrm_event_sync_node_insert_shutdown(EntityInterface $entity) {
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function civicrm_event_sync_node_update(EntityInterface $entity) {
-  drupal_register_shutdown_function('civicrm_event_sync_node_update_shutdown', $entity);
+  if (_runOperationForType('update', 'civicrm')) {
+    drupal_register_shutdown_function('civicrm_event_sync_node_update_shutdown', $entity);
+  }
 }
 
 /**
@@ -171,7 +181,9 @@ function civicrm_event_sync_node_update_shutdown(EntityInterface $entity) {
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
 function civicrm_event_sync_node_delete(EntityInterface $entity) {
-  drupal_register_shutdown_function('civicrm_event_sync_node_delete_shutdown', $entity);
+  if (_runOperationForType('delete', 'civicrm')) {
+    drupal_register_shutdown_function('civicrm_event_sync_node_delete_shutdown', $entity);
+  }
 }
 
 /**
@@ -185,6 +197,8 @@ function civicrm_event_sync_node_delete_shutdown(EntityInterface $entity) {
 }
 
 /**
+ * Implements hook_form_alter().
+ *
  * @param $form
  * @param \Drupal\Core\Form\FormStateInterface $form_state
  * @param $form_id
@@ -198,9 +212,8 @@ function civicrm_event_sync_form_alter(&$form, FormStateInterface $form_state, $
 
     if (\Drupal::currentUser()->hasPermission('edit all events')) {
       \Drupal::messenger()
-        ->addMessage(t('This Event is linked with civicrm, edit the event <a href="/civicrm/event/manage/settings?reset=1&action=update&id=@id">here</a>.', ['@id' => $civicrm_event_id]));
+        ->addMessage(t('This Event is linked with civicrm event ID @id. Edit the event <a href="/civicrm/event/manage/settings?reset=1&action=update&id=@id">here</a>.', ['@id' => $civicrm_event_id]));
     }
-
   }
 }
 
@@ -258,6 +271,13 @@ function _message_types(): array {
   ];
 }
 
+/**
+ * Helper function to get the drupal node from a civicrm event.
+ *
+ * @param int $id
+ *   The ID of the event in CiviCRM.
+ * @return array
+ */
 function _getNodesFromCivicrmEventId(int $id): array {
   $query = \Drupal::service('entity.query')->get('node');
   $result = $query->condition('type', 'event')
@@ -266,4 +286,20 @@ function _getNodesFromCivicrmEventId(int $id): array {
     ->execute();
 
   return $result;
+}
+
+/**
+ * Helper function to check of an operation is to be run on a certain
+ * destination
+ *
+ * @param $operation
+ *   the operation to check. Can be any of create, update, delete.
+ * @param $destination
+ *   The destination of the sync. Can be any of drupal or civicrm.
+ *
+ * @return bool
+ */
+function _runOperationForType($operation, $destination): bool {
+  return in_array($operation, \Drupal::config('civicrm_event_sync.settings')
+    ->get("ops_to_{$destination}"));
 }
