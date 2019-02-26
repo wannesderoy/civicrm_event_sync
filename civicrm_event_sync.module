@@ -42,10 +42,10 @@ use Drupal\Core\Render\Markup;
  *   The name of the entity in CiviCRM.
  * @param string $objectId
  *   The id of the current entity.
- * @param object $objectRef
+ * @param object|array $objectRef
  *   An array containing the entity data.
  */
-function civicrm_event_sync_civicrm_post(string $op, string $objectName, string $objectId, object &$objectRef) {
+function civicrm_event_sync_civicrm_post(string $op, string $objectName, string $objectId, &$objectRef) {
   // Only allow for events from civicrm.
   if ($objectName === "Event") {
     if (function_exists("civicrm_event_sync_civicrm_post_${op}")) {
