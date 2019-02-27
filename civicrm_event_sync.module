@@ -299,7 +299,7 @@ function _getNodesFromCivicrmEventId(int $id): array {
  *
  * @return bool
  */
-function _runOperationForType($operation, $destination): bool {
+function _runOperationForType($operation, $destination) {
   return in_array($operation, \Drupal::config('civicrm_event_sync.settings')
     ->get("ops_to_{$destination}"));
 }
