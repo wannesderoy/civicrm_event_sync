@@ -42,14 +42,14 @@ use Drupal\Core\Render\Markup;
  *   The name of the entity in CiviCRM.
  * @param string $objectId
  *   The id of the current entity.
- * @param object $objectRef
+ * @param object|array $objectRef
  *   An array containing the entity data.
  */
-function civicrm_event_sync_civicrm_post(string $op, string $objectName, string $objectId, object &$objectRef) {
+function civicrm_event_sync_civicrm_post($op, $objectName, $objectId, &$objectRef) {
   // Only allow for events from civicrm.
   if ($objectName === "Event") {
     if (function_exists("civicrm_event_sync_civicrm_post_${op}")) {
-      call_user_func("civicrm_event_sync_civicrm_post_${op}", $objectId, $objectRef);
+      call_user_func("civicrm_event_sync_civicrm_post_${op}", $objectRef);
     }
   }
 }
@@ -57,76 +57,70 @@ function civicrm_event_sync_civicrm_post(string $op, string $objectName, string 
 /**
  * Implements hook_civicrm_post() for create operation.
  *
- * @param $objectId
  * @param $objectRef
  *
  * @see civicrm_event_sync_civicrm_post().
  */
-function civicrm_event_sync_civicrm_post_create($objectId, $objectRef) {
-  if (_runOperationForType('create', 'drupal')) {
-    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_create_shutdown', $objectId, $objectRef);
+function civicrm_event_sync_civicrm_post_create($objectRef) {
+  if (_canRunOperationForDestination('create', 'drupal')) {
+    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_create_shutdown', $objectRef);
   }
 }
 
 /**
  * CiviCRM event create shutdown function.
  *
- * @param $objectId
  * @param $objectRef
  */
-function civicrm_event_sync_civicrm_post_create_shutdown($objectId, $objectRef) {
+function civicrm_event_sync_civicrm_post_create_shutdown($objectRef) {
   \Drupal::service('civicrm_event_sync.drupal')
-    ->eventSyncCivicrmCreateDrupal($objectId, $objectRef);
+    ->create($objectRef);
 }
 
 /**
  * Implements hook_civicrm_post() for edit operation.
  *
- * @param $objectId
  * @param $objectRef
  *
  * @see civicrm_event_sync_civicrm_post().
  */
-function civicrm_event_sync_civicrm_post_edit($objectId, $objectRef) {
-  if (_runOperationForType('update', 'drupal')) {
-    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_edit_shutdown', $objectId, $objectRef);
+function civicrm_event_sync_civicrm_post_edit($objectRef) {
+  if (_canRunOperationForDestination('update', 'drupal')) {
+    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_edit_shutdown', $objectRef);
   }
 }
 
 /**
  * CiviCRM event update shutdown function.
  *
- * @param $objectId
  * @param $objectRef
  */
-function civicrm_event_sync_civicrm_post_edit_shutdown($objectId, $objectRef) {
+function civicrm_event_sync_civicrm_post_edit_shutdown($objectRef) {
   \Drupal::service('civicrm_event_sync.drupal')
-    ->eventSyncCivicrmUpdateDrupal($objectId, $objectRef);
+    ->update($objectRef);
 }
 
 /**
  * Implements hook_civicrm_post() for delete operation.
  *
- * @param $objectId
  * @param $objectRef
  *
  * @see civicrm_event_sync_civicrm_post().
  */
-function civicrm_event_sync_civicrm_post_delete($objectId, $objectRef) {
-  if (_runOperationForType('delete', 'drupal')) {
-    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_delete_shutdown', $objectId, $objectRef);
+function civicrm_event_sync_civicrm_post_delete($objectRef) {
+  if (_canRunOperationForDestination('delete', 'drupal')) {
+    drupal_register_shutdown_function('civicrm_event_sync_civicrm_post_delete_shutdown', $objectRef);
   }
 }
 
 /**
  * CiviCRM event delete shutdown function.
  *
- * @param $objectId
  * @param $objectRef
  */
-function civicrm_event_sync_civicrm_post_delete_shutdown($objectId, $objectRef) {
+function civicrm_event_sync_civicrm_post_delete_shutdown($objectRef) {
   \Drupal::service('civicrm_event_sync.drupal')
-    ->eventSyncCivicrmDeleteDrupal($objectId, $objectRef);
+    ->delete($objectRef);
 }
 
 /**
@@ -135,11 +129,9 @@ function civicrm_event_sync_civicrm_post_delete_shutdown($objectId, $objectRef) 
 
 /**
  * Implements hook_ENTITY_TYPE_insert().
- *
- * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-function civicrm_event_sync_node_insert(EntityInterface $entity) {
-  if (_runOperationForType('create', 'civicrm')) {
+function civicrm_event_sync_node_insert($entity) {
+  if (_canRunOperationForDestination('create', 'civicrm')) {
     drupal_register_shutdown_function('civicrm_event_sync_node_insert_shutdown', $entity);
   }
 }
@@ -149,9 +141,9 @@ function civicrm_event_sync_node_insert(EntityInterface $entity) {
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-function civicrm_event_sync_node_insert_shutdown(EntityInterface $entity) {
+function civicrm_event_sync_node_insert_shutdown($entity) {
   \Drupal::service('civicrm_event_sync.civicrm')
-    ->eventSyncDrupalCreateCivicrm($entity);
+    ->create($entity);
 }
 
 /**
@@ -159,8 +151,8 @@ function civicrm_event_sync_node_insert_shutdown(EntityInterface $entity) {
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-function civicrm_event_sync_node_update(EntityInterface $entity) {
-  if (_runOperationForType('update', 'civicrm')) {
+function civicrm_event_sync_node_update($entity) {
+  if (_canRunOperationForDestination('update', 'civicrm')) {
     drupal_register_shutdown_function('civicrm_event_sync_node_update_shutdown', $entity);
   }
 }
@@ -170,9 +162,9 @@ function civicrm_event_sync_node_update(EntityInterface $entity) {
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-function civicrm_event_sync_node_update_shutdown(EntityInterface $entity) {
+function civicrm_event_sync_node_update_shutdown($entity) {
   \Drupal::service('civicrm_event_sync.civicrm')
-    ->eventSyncDrupalUpdateCivicrm($entity);
+    ->update($entity);
 }
 
 /**
@@ -180,8 +172,8 @@ function civicrm_event_sync_node_update_shutdown(EntityInterface $entity) {
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-function civicrm_event_sync_node_delete(EntityInterface $entity) {
-  if (_runOperationForType('delete', 'civicrm')) {
+function civicrm_event_sync_node_delete($entity) {
+  if (_canRunOperationForDestination('delete', 'civicrm')) {
     drupal_register_shutdown_function('civicrm_event_sync_node_delete_shutdown', $entity);
   }
 }
@@ -191,9 +183,9 @@ function civicrm_event_sync_node_delete(EntityInterface $entity) {
  *
  * @param \Drupal\Core\Entity\EntityInterface $entity
  */
-function civicrm_event_sync_node_delete_shutdown(EntityInterface $entity) {
+function civicrm_event_sync_node_delete_shutdown($entity) {
   \Drupal::service('civicrm_event_sync.civicrm')
-    ->eventSyncDrupalDeleteCivicrm($entity);
+    ->delete($entity);
 }
 
 /**
@@ -262,7 +254,7 @@ function civicrm_event_sync_civicrm_pageRun(&$page) {
  *
  * @return array
  */
-function _message_types(): array {
+function _message_types() {
   return [
     'info' => 'status',
     'success' => 'status',
@@ -278,7 +270,7 @@ function _message_types(): array {
  *   The ID of the event in CiviCRM.
  * @return array
  */
-function _getNodesFromCivicrmEventId(int $id): array {
+function _getNodesFromCivicrmEventId($id) {
   $query = \Drupal::service('entity.query')->get('node');
   $result = $query->condition('type', 'event')
     ->condition(\Drupal::config('civicrm_event_sync.settings')
@@ -299,7 +291,7 @@ function _getNodesFromCivicrmEventId(int $id): array {
  *
  * @return bool
  */
-function _runOperationForType($operation, $destination): bool {
+function _canRunOperationForDestination($operation, $destination) {
   return in_array($operation, \Drupal::config('civicrm_event_sync.settings')
     ->get("ops_to_{$destination}"));
 }

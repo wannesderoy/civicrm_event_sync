@@ -21,14 +21,9 @@ class EventSyncCivicrm extends EventSyncBase {
   }
 
   /**
-   * Create an event from Drupal in CiviCRM.
-   *
-   * @param \Drupal\Core\Entity\Entity $entity
-   *   The entity of type node.
-   *
-   * @throws \Exception
+   * {@inheritdoc}
    */
-  public function eventSyncDrupalCreateCivicrm(Entity $entity): void {
+  public function create($entity): void {
     // Check if event already exists in Civicrm, only continue if not.
     if (!$this->existsInCivicrm($entity->id())) {
       // First: create the event in civicrm as wel.
@@ -49,18 +44,13 @@ class EventSyncCivicrm extends EventSyncBase {
   }
 
   /**
-   * Update an event from Drupal in civicrm.
-   *
-   * @param \Drupal\Core\Entity\Entity $entity
-   *   The entity of type node.
-   *
-   * @throws \Exception
+   * {@inheritdoc}
    */
-  public function eventSyncDrupalUpdateCivicrm(Entity $entity): void {
+  public function update($entity): void {
     // If a node has no value in event_id field create the event in civicrm.
     $event = $entity->get($this->civicrmRefField)->getString();
     if (empty($event)) {
-      $this->eventSyncDrupalCreateCivicrm($entity);
+      $this->create($entity);
     }
     else if ($this->update < 1) {
       $this->apiService->api('Event', 'create', [
@@ -76,14 +66,9 @@ class EventSyncCivicrm extends EventSyncBase {
   }
 
   /**
-   * Delete an event from Drupal in civicrm.
-   *
-   * @param \Drupal\Core\Entity\Entity $entity
-   *   The entity of type node.
-   *
-   * @throws \Exception
+   * {@inheritdoc}
    */
-  public function eventSyncDrupalDeleteCivicrm(Entity $entity): void {
+  public function delete($entity): void {
     if ($entity) {
       $id = $entity->get($this->civicrmRefField)->getString();
       $result = $this->apiService->api('Event', 'delete', [
@@ -95,6 +80,17 @@ class EventSyncCivicrm extends EventSyncBase {
           ->error('Deleted CiviCRM event with id: %id.', ['%id' => $entity->id()]);
       }
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function existsInCivicrm(int $event_id): bool {
+    $events = $this->getCivicrmEventsFromNodeId($event_id);
+    if (!empty($events)) {
+      return TRUE;
+    }
+    return FALSE;
   }
 
 }

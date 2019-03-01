@@ -10,7 +10,7 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 /**
  * Controller for syncing events into Civicrm.
  */
-class EventSyncBase {
+abstract class EventSyncBase implements EventSyncBaseInterface {
 
   /**
    * The entity type manager.
@@ -87,82 +87,16 @@ class EventSyncBase {
     $this->logger = $logger;
     $this->apiService = $apiService;
 
-    $this->civicrmRefField = $this->getCivicrmRefField();
-    $this->drupalRefField = $this->getDrupalRefField();
+    $this->drupalRefField = $this->configFactory->get('civicrm_event_sync.settings')
+      ->get('drupal_field');
+    $this->civicrmRefField = $this->configFactory->get('civicrm_event_sync.settings')
+      ->get('custom_field');
+
     $this->update = 0;
   }
 
   /**
-   * Get the configured field name for the sync.
-   *
-   * @return string
-   *   The field configured in the backend to use as sync base.
-   */
-  public function getCivicrmRefField(): string {
-    $field_name = $this->configFactory->get('civicrm_event_sync.settings')
-      ->get('drupal_field');
-    return $field_name;
-  }
-
-  /**
-   * Get the configured field name for the sync.
-   *
-   * @return string
-   *   The field configured in the backend to use as sync base.
-   */
-  public function getDrupalRefField(): string {
-    $field_name = $this->configFactory->get('civicrm_event_sync.settings')
-      ->get('custom_field');
-    return $field_name;
-  }
-
-  /**
-   * Check if an event in CiviCRM exists in Drupal.
-   *
-   * @param int $event_id
-   *   The ID of the CiviCRM event.
-   *
-   * @return bool
-   *   returns true if exists, false otherwise.
-   *
-   */
-  public function existsInDrupal(int $event_id): bool {
-    $events = $this->getNodesFromCivicrmEventId($event_id);
-    if (!empty($events)) {
-      return TRUE;
-    }
-    return FALSE;
-  }
-
-  /**
-   * Check if an event in Drupal exists in Civicrm.
-   *
-   * @param int $event_id
-   *   The ID of the Drupal event.
-   *
-   * @return bool
-   *   returns true if exists, false otherwise.
-   *
-   * @throws \Exception
-   */
-  public function existsInCivicrm(int $event_id): bool {
-    $events = $this->getCivicrmEventsFromNodeId($event_id);
-    if (!empty($events)) {
-      return TRUE;
-    }
-    return FALSE;
-  }
-
-  /**
-   * Query CiviCRM to look for an event with the Drupal node id.
-   *
-   * @param int $id
-   *   The ID of the Drupal event node.
-   *
-   * @return bool|array
-   *   returns the found entity, FALSE otherwise.
-   *
-   * @throws \Exception
+   * {@inheritdoc}
    */
   public function getCivicrmEventsFromNodeId(int $id): array {
     $result = $this->apiService->api('Event', 'get', ['custom_10' => $id]);
@@ -170,18 +104,7 @@ class EventSyncBase {
   }
 
   /**
-   * Query Drupal to look for an event with the CiviCRM Event id.
-   *
-   * @param int $id
-   *   The ID of the CiviCRM event.
-   * @param string $conjunction
-   *   (optional) The logical operator for the query, either:
-   *   - AND: all of the conditions on the query need to match.
-   *   - OR: at least one of the conditions on the query need to match.
-   *
-   * @return \Drupal\Core\Entity\EntityInterface[]|\Drupal\node\Entity\Node[]
-   *   returns the found entity, FALSE otherwise.
-   *
+   * {@inheritdoc}
    */
   public function getNodesFromCivicrmEventId(int $id, string $conjunction = 'AND'): array {
     $query = \Drupal::service('entity.query')->get('node');
@@ -193,14 +116,7 @@ class EventSyncBase {
   }
 
   /**
-   * Helper function to quickly get the referenced Drupal event id from a
-   * CiviCRM event.
-   *
-   * @param int $event_id
-   *   The id of the event in CiviCRM.
-   *
-   * @return int
-   * @throws \Exception
+   * {@inheritdoc}
    */
   public function getCivicrmEventDrupalId(int $event_id): int {
     $result = $this->apiService->api('Event', 'getSingle', [
@@ -212,13 +128,7 @@ class EventSyncBase {
   }
 
   /**
-   * Helper function that checks if an event is a templates. We need to check
-   * this because we don't allow a templates override.
-   *
-   * @param int $event_id
-   *
-   * @return bool
-   * @throws \Exception
+   * {@inheritdoc}
    */
   public function isEventTemplate(int $event_id): bool {
     $result = $this->apiService->api('Event', 'getSingle', [
@@ -227,15 +137,6 @@ class EventSyncBase {
     ]);
 
     return (bool) $result['is_template'];
-  }
-
-  /**
-   * @param $date
-   *
-   * @return string
-   */
-  public function formatDate($date): string {
-    return (string) date('Y-m-d h:m:s', strtotime($date));
   }
 
 }

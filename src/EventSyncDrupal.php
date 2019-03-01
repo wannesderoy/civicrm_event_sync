@@ -20,19 +20,12 @@ class EventSyncDrupal extends EventSyncBase {
   }
 
   /**
-   * Create an event from CiviCRM in Drupal.
-   *
-   * @param string $objectId
-   *   The id of the event.
-   * @param object $objectRef
-   *   The CiviXRM entity of type event.
-   *
-   * @throws \Exception
+   * {@inheritdoc}
    */
-  public function eventSyncCivicrmCreateDrupal(string $objectId, object $objectRef): void {
+  public function create($objectRef): void {
     // Check if event already exists in Drupal, only continue if not.
-    // @TODO: check if is template, don't sync if so.
-    if (!$this->existsInDrupal($objectId) && !$this->isEventTemplate($objectId)) {
+    // Check if is template, don't sync if so.
+    if (!$this->existsInDrupal($objectRef->id) && !$this->isEventTemplate($objectRef->id)) {
       // First: create the node in Drupal as wel.
       $event = $this->entityTypeManager->getStorage('node')
         ->create([
@@ -41,14 +34,14 @@ class EventSyncDrupal extends EventSyncBase {
         ]);
 
       $event->set('title', $objectRef->title);
-      $event->set($this->civicrmRefField, $objectId);
+      $event->set($this->civicrmRefField, $objectRef->id);
       $event->status = 0;
       $event->enforceIsNew();
       $event->save();
 
       // Second: update the current civicrm even to include the Drupal node id.
       $this->apiService->api('Event', 'create', [
-        'id' => $objectId,
+        'id' => $objectRef->id,
         $this->drupalRefField => $event->id(),
       ]);
 
@@ -58,21 +51,14 @@ class EventSyncDrupal extends EventSyncBase {
   }
 
   /**
-   * Update an event from CiviCRM in Drupal.
-   *
-   * @param string $objectId
-   *   The id of the event.
-   * @param object $objectRef
-   *   The CiviXRM entity of type event.
-   *
-   * @throws \Exception
+   * {@inheritdoc}
    */
-  public function eventSyncCivicrmUpdateDrupal(string $objectId, object $objectRef): void {
+  public function update($objectRef): void {
     // If a event has no value in node id field create the event in Drupal.
-    if (!$this->isEventTemplate($objectId)) {
-      $event = $this->getCivicrmEventDrupalId($objectId);
+    if (!$this->isEventTemplate($objectRef->id)) {
+      $event = $this->getCivicrmEventDrupalId($objectRef->id);
       if (empty($event)) {
-        $this->eventSyncCivicrmCreateDrupal($objectId, $objectRef);
+        $this->create($objectRef->id, $objectRef);
       }
       else {
         if ($this->update < 1) {
@@ -90,25 +76,29 @@ class EventSyncDrupal extends EventSyncBase {
   }
 
   /**
-   * Delete an event from CiviCRM in Drupal.
-   *
-   * @param string $objectId
-   *   The id of the event.
-   * @param object $objectRef
-   *   The CiviXRM entity of type event.
-   *
-   * @throws \Exception
+   * {@inheritdoc}
    */
-  public function eventSyncCivicrmDeleteDrupal(string $objectId, object $objectRef): void {
-    $event = $this->getNodesFromCivicrmEventId($objectId);
-    if ($event) {
+  public function delete($objectRef): void {
+    $events = $this->getNodesFromCivicrmEventId($objectRef->id);
+    if ($events) {
       $this->entityTypeManager->getStorage('node')
-        ->loadMultiple($event)
+        ->loadMultiple($events)
         ->delete();
 
       $this->logger->get('EventSync')
-        ->error('Deleted Drupal node(s) with id(\'s) %ids', ['%ids' => implode(', ', $entities)]);
+        ->error('Deleted Drupal node(s) with id(\'s) %ids', ['%ids' => implode(', ', $events)]);
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function existsInDrupal(int $event_id): bool {
+    $events = $this->getNodesFromCivicrmEventId($event_id);
+    if (!empty($events)) {
+      return TRUE;
+    }
+    return FALSE;
   }
 
 }
