@@ -118,7 +118,6 @@ abstract class EventSyncBase implements EventSyncBaseInterface {
    * {@inheritdoc}
    */
   public function fetchDrupal($id): array {
-//    $query = \Drupal::service('entity.query')->get('node');
     $query = $this->entityTypeManager->getStorage('node')->getQuery();
 
     $result = $query->condition('type', $this->drupalContentType)

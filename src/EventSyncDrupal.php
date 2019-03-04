@@ -54,25 +54,23 @@ class EventSyncDrupal extends EventSyncBase {
    */
   public function update($objectRef): void {
     // If a event has no value in node id field create the event in Drupal.
-    if (!$this->isEventTemplate($objectRef->id)) {
-      $event = $this->apiService->api('Event', 'getSingle', [
-        'id' => $objectRef->id,
-        'return' => ["custom_10"],
-      ]);
-      if (isset($event['custom_10']) && empty($event['custom_10'])) {
-        $this->create($objectRef);
-      }
-      else {
-        if ($this->update < 1) {
-          $this->update++;
+    $event = $this->apiService->api('Event', 'getSingle', [
+      'id' => $objectRef->id,
+      'return' => ["custom_10"],
+    ]);
+    if (isset($event['custom_10']) && empty($event['custom_10'])) {
+      $this->create($objectRef);
+    }
+    else {
+      if ($this->update < 1) {
+        $this->update++;
 
-          $event = $this->entityTypeManager->getStorage('node')->load($event);
-          $event->set('title', $objectRef->title);
-          $event->save();
+        $event = $this->entityTypeManager->getStorage('node')->load($event['custom_10']);
+        $event->set('title', $objectRef->title);
+        $event->save();
 
-          $this->logger->get('EventSync')
-            ->info('Updated Drupal event with id %id', ['%id' => $event->id()]);
-        }
+        $this->logger->get('EventSync')
+          ->info('Updated Drupal event with id %id', ['%id' => $event->id()]);
       }
     }
   }
