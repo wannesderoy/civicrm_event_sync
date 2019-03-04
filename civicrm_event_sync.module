@@ -8,7 +8,6 @@
  * entity and a Drupal node type event.
  */
 
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
 
@@ -191,6 +190,8 @@ function civicrm_event_sync_node_delete_shutdown($entity) {
 /**
  * Implements hook_form_alter().
  *
+ * Display a message to the user, if right permissions, with a link to CiviCRM.
+ *
  * @param $form
  * @param \Drupal\Core\Form\FormStateInterface $form_state
  * @param $form_id
@@ -268,6 +269,7 @@ function _message_types() {
  *
  * @param int $id
  *   The ID of the event in CiviCRM.
+ *
  * @return array
  */
 function _getNodesFromCivicrmEventId($id) {

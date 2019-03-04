@@ -39,7 +39,7 @@ class EventSyncCivicrm extends EventSyncBase {
       }
 
       $this->logger->get('EventSync')
-        ->error('Created CiviCRM event with id: %id.', ['%id' => $result['id']]);
+        ->info('Created CiviCRM event with id: %id.', ['%id' => $result['id']]);
     }
   }
 
@@ -61,7 +61,7 @@ class EventSyncCivicrm extends EventSyncBase {
       $this->update++;
 
       $this->logger->get('EventSync')
-        ->error('Updated CiviCRM event with id: %id.', ['%id' => $event]);
+        ->info('Updated CiviCRM event with id: %id.', ['%id' => $event]);
     }
   }
 
@@ -77,7 +77,7 @@ class EventSyncCivicrm extends EventSyncBase {
 
       if (isset($result['is_error']) && !$result['is_error']) {
         $this->logger->get('EventSync')
-          ->error('Deleted CiviCRM event with id: %id.', ['%id' => $entity->id()]);
+          ->info('Deleted CiviCRM event with id: %id.', ['%id' => $entity->id()]);
       }
     }
   }
@@ -86,7 +86,7 @@ class EventSyncCivicrm extends EventSyncBase {
    * {@inheritdoc}
    */
   public function existsInCivicrm(int $event_id): bool {
-    $events = $this->getCivicrmEventsFromNodeId($event_id);
+    $events = $this->fetchCivicrm($event_id);
     if (!empty($events)) {
       return TRUE;
     }

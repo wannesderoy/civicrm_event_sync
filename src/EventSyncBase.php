@@ -62,7 +62,14 @@ abstract class EventSyncBase implements EventSyncBaseInterface {
   var $drupalRefField;
 
   /**
-   * @var
+   * Contains the name of the configured Drupal content type to store an Event.
+   *
+   * @var string
+   */
+  var $drupalContentType;
+
+  /**
+   * @var int
    */
   var $update;
 
@@ -91,6 +98,8 @@ abstract class EventSyncBase implements EventSyncBaseInterface {
       ->get('drupal_field');
     $this->civicrmRefField = $this->configFactory->get('civicrm_event_sync.settings')
       ->get('custom_field');
+    $this->drupalContentType = $this->configFactory->get('civicrm_event_sync.settings')
+      ->get('content_type');
 
     $this->update = 0;
   }
@@ -98,33 +107,25 @@ abstract class EventSyncBase implements EventSyncBaseInterface {
   /**
    * {@inheritdoc}
    */
-  public function getCivicrmEventsFromNodeId(int $id): array {
-    $result = $this->apiService->api('Event', 'get', ['custom_10' => $id]);
+  public function fetchCivicrm($id): array {
+    $result = $this->apiService->api('Event', 'get', [
+      'custom_10' => $id
+    ]);
     return $result['values'];
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getNodesFromCivicrmEventId(int $id, string $conjunction = 'AND'): array {
-    $query = \Drupal::service('entity.query')->get('node');
-    $result = $query->condition('type', 'event')
-      ->condition($this->civicrmRefField . ".event_id", $id)
+  public function fetchDrupal($id): array {
+//    $query = \Drupal::service('entity.query')->get('node');
+    $query = $this->entityTypeManager->getStorage('node')->getQuery();
+
+    $result = $query->condition('type', $this->drupalContentType)
+      ->condition($this->drupalRefField . ".event_id", $id)
       ->execute();
 
     return $result;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getCivicrmEventDrupalId(int $event_id): int {
-    $result = $this->apiService->api('Event', 'getSingle', [
-      'id' => $event_id,
-      'return' => ["custom_10"],
-    ]);
-
-    return $result['custom_10'];
   }
 
   /**

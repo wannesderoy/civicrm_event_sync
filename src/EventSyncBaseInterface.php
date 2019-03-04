@@ -2,11 +2,6 @@
 
 namespace Drupal\civicrm_event_sync;
 
-use Drupal\civicrm\Civicrm;
-use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Logger\LoggerChannelFactoryInterface;
-
 /**
  * Controller for syncing events into Civicrm.
  */
@@ -43,45 +38,24 @@ interface EventSyncBaseInterface {
   public function delete($params): void;
 
   /**
-   * Query CiviCRM to look for an event with the Drupal node id.
+   * Fetch an event by id from Drupal
    *
-   * @param int $id
-   *   The ID of the Drupal event node.
+   * @param $id
+   * @param $from
    *
-   * @return bool|array
-   *   returns the found entity, FALSE otherwise.
-   *
-   * @throws \Exception
+   * @return array
    */
-  public function getCivicrmEventsFromNodeId(int $id): array;
+  public function fetchDrupal($id): array;
 
   /**
-   * Query Drupal to look for an event with the CiviCRM Event id.
+   * Fetch an event by id from CiviCRM
    *
-   * @param int $id
-   *   The ID of the CiviCRM event.
-   * @param string $conjunction
-   *   (optional) The logical operator for the query, either:
-   *   - AND: all of the conditions on the query need to match.
-   *   - OR: at least one of the conditions on the query need to match.
+   * @param $id
+   * @param $from
    *
-   * @return \Drupal\Core\Entity\EntityInterface[]|\Drupal\node\Entity\Node[]
-   *   returns the found entity, FALSE otherwise.
-   *
+   * @return array
    */
-  public function getNodesFromCivicrmEventId(int $id, string $conjunction = 'AND'): array;
-
-  /**
-   * Helper function to quickly get the referenced Drupal event id from a
-   * CiviCRM event.
-   *
-   * @param int $event_id
-   *   The id of the event in CiviCRM.
-   *
-   * @return int
-   * @throws \Exception
-   */
-  public function getCivicrmEventDrupalId(int $event_id): int;
+  public function fetchCiviCRM($id): array;
 
   /**
    * Helper function that checks if an event is a templates. We need to check
