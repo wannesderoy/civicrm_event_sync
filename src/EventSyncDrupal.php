@@ -81,12 +81,12 @@ class EventSyncDrupal extends EventSyncBase {
   public function delete($objectRef): void {
     $event = $this->apiService->api('Event', 'get', [
       'id' => $objectRef->id,
-      'return' => [$this->drupalRefField],
+      'return' => [$this->civicrmRefField],
     ]);
     if ($event) {
-      $this->entityTypeManager->getStorage('node')
-        ->loadMultiple($event)
-        ->delete();
+      $nodeStorage = $this->entityTypeManager->getStorage('node');
+      $entities = $nodeStorage->loadMultiple($event);
+      $nodeStorage->delete($entities);
 
       $this->logger->get('EventSync')
         ->info('Deleted Drupal node(s) with id(\'s) %ids', ['%ids' => $event]);
