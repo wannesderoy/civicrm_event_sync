@@ -4,6 +4,7 @@ namespace Drupal\civicrm_event_sync;
 
 use Drupal\civicrm\Civicrm;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 
@@ -11,6 +12,13 @@ use Drupal\Core\Logger\LoggerChannelFactoryInterface;
  * Controller for syncing events into Civicrm.
  */
 abstract class EventSyncBase implements EventSyncBaseInterface {
+
+  /**
+   * The database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
+   */
+  protected $connection;
 
   /**
    * The entity type manager.
@@ -76,6 +84,7 @@ abstract class EventSyncBase implements EventSyncBaseInterface {
   /**
    * EventSyncBse constructor.
    *
+   * @param \Drupal\Core\Database\Connection $connection
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
@@ -87,7 +96,8 @@ abstract class EventSyncBase implements EventSyncBaseInterface {
    * @param \Drupal\civicrm_event_sync\ApiService $apiService
    *   The civicrm_event_sync api service.
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, Civicrm $civicrm, LoggerChannelFactoryInterface $logger, ApiService $apiService) {
+  public function __construct(Connection $connection, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, Civicrm $civicrm, LoggerChannelFactoryInterface $logger, ApiService $apiService) {
+    $this->connection = $connection;
     $this->entityTypeManager = $entityTypeManager;
     $this->configFactory = $configFactory;
     $this->civicrm = $civicrm;
@@ -107,9 +117,10 @@ abstract class EventSyncBase implements EventSyncBaseInterface {
   /**
    * {@inheritdoc}
    */
-  public function fetchCivicrm($id): array {
-    $result = $this->apiService->api('Event', 'get', [
-      'custom_10' => $id
+  public function fetchCivicrm($id, $by = 'id'): array {
+    $result = $this->apiService->api('Event', 'getSingle', [
+      $by => $id,
+      'return' => [$this->civicrmRefField, "id", "title"],
     ]);
     return $result['values'];
   }

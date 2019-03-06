@@ -1,10 +1,16 @@
 services:
+  civicrm_event_sync:
+    class: 'Drupal\civicrm_event_sync\EventSync'
+    arguments: ['@civicrm_event_sync.db']
   civicrm_event_sync.civicrm:
     class: 'Drupal\civicrm_event_sync\EventSyncCivicrm'
-    arguments: ['@entity_type.manager', '@config.factory', '@civicrm', '@logger.factory', '@civicrm_event_sync.api']
+    arguments: ['@database', '@entity_type.manager', '@config.factory', '@civicrm', '@logger.factory', '@civicrm_event_sync.api']
   civicrm_event_sync.drupal:
     class: 'Drupal\civicrm_event_sync\EventSyncDrupal'
-    arguments: ['@entity_type.manager', '@config.factory', '@civicrm', '@logger.factory', '@civicrm_event_sync.api']
+    arguments: ['@database', '@entity_type.manager', '@config.factory', '@civicrm', '@logger.factory', '@civicrm_event_sync.api']
   civicrm_event_sync.api:
     class: 'Drupal\civicrm_event_sync\ApiService'
     arguments: ['@civicrm', '@logger.factory']
+  civicrm_event_sync.db:
+    class: 'Drupal\civicrm_event_sync\DbService'
+    arguments: ['@database', '@logger.factory']

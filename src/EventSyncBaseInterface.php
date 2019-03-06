@@ -38,6 +38,16 @@ interface EventSyncBaseInterface {
   public function delete($params): void;
 
   /**
+   * Fetch a sync row from the db.
+   *
+   * @param $id
+   * @param $from
+   *
+   * @return array
+   */
+  public function get($id): array;
+
+  /**
    * Fetch an event by id from Drupal
    *
    * @param $id
@@ -51,11 +61,11 @@ interface EventSyncBaseInterface {
    * Fetch an event by id from CiviCRM
    *
    * @param $id
-   * @param $from
+   * @param string $by
    *
    * @return array
    */
-  public function fetchCiviCRM($id): array;
+  public function fetchCivicrm($id, $by = 'id'): array;
 
   /**
    * Helper function that checks if an event is a templates. We need to check

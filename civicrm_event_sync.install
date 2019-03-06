@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the civicrm_event_sync module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function civicrm_event_sync_schema() {
+
+  $schema['civicrm_event_sync'] = [
+    'description' => 'Table that contains id links between CiviCRM Events & Drupal Nodes',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary key',
+      ],
+      'cid' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'CiviCRM Event ID',
+      ],
+      'nid' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'Node ID',
+      ],
+      'origin' => [
+        'type' => 'varchar_ascii',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+    ],
+    'primary key' => ['id'],
+  ];
+
+  return $schema;
+}

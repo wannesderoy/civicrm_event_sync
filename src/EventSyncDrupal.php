@@ -4,6 +4,7 @@ namespace Drupal\civicrm_event_sync;
 
 use Drupal\civicrm\Civicrm;
 use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 
@@ -15,8 +16,8 @@ class EventSyncDrupal extends EventSyncBase {
   /**
    * {@inheritdoc}
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, Civicrm $civicrm, LoggerChannelFactoryInterface $logger, ApiService $apiService) {
-    parent::__construct($entityTypeManager, $configFactory, $civicrm, $logger, $apiService);
+  public function __construct(Connection $connection, EntityTypeManagerInterface $entityTypeManager, ConfigFactoryInterface $configFactory, Civicrm $civicrm, LoggerChannelFactoryInterface $logger, ApiService $apiService) {
+    parent::__construct($connection, $entityTypeManager, $configFactory, $civicrm, $logger, $apiService);
   }
 
   /**
@@ -79,10 +80,7 @@ class EventSyncDrupal extends EventSyncBase {
    * {@inheritdoc}
    */
   public function delete($objectRef): void {
-    $event = $this->apiService->api('Event', 'get', [
-      'id' => $objectRef->id,
-      'return' => [$this->civicrmRefField],
-    ]);
+    $event = $this->fetchCivicrm($objectRef->id);
     if ($event) {
       $nodeStorage = $this->entityTypeManager->getStorage('node');
       $entities = $nodeStorage->loadMultiple($event);
